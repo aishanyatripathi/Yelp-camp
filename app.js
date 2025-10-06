@@ -44,24 +44,36 @@ app.post('/campgrounds' ,async(req,res ) => {
     res.redirect(`/campgrounds/${campground._id}`);
 });
 
+// Route for editing must come before the show route so '/campgrounds/:id/edit' is not
+// mistaken for an :id value by the show route.
+app.get('/campgrounds/:id/edit' ,async(req,res ) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send('Invalid ID');
+    }
+    const campground = await Campground.findById(id);
+    if (!campground) {
+        return res.status(404).send('Campground not found');
+    }
+    res.render('campgrounds/edit' ,{ campground });
+});
+
+
 app.get('/campgrounds/:id', async (req, res) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send('Invalid ID');
+    }
     try {
-        const campground = await Campground.findById(req.params.id);
+        const campground = await Campground.findById(id);
         if (!campground) {
-            return res.send('Campground not found');
-            // or redirect('/campgrounds');
+            return res.status(404).send('Campground not found');
         }
         res.render('campgrounds/show', { campground });
     } catch (e) {
         console.log(e);
-        res.send('Invalid ID');
+        res.status(500).send('Server error');
     }
-});
-
-
-app.get('/campgrounds/:id/edit' ,async(req,res ) => {
-    const campground = await Campground.findById(req.params.id);
-    res.render('campgrounds/edit' ,{ campground });
 });
 
 app.put('/campgrounds/:id' ,async(req,res) =>{
