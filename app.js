@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
+const catchAsync = require('./utils/catchAsync');
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
 
@@ -29,20 +30,22 @@ app.get('/' ,(req,res ) => {
     res.render('home')
 });
 
-app.get('/campgrounds' ,async(req,res ) => {
+app.get('/campgrounds' ,catchAsync(async(req,res ) => {
     const campgrounds = await Campground.find({});
     res.render('campgrounds/index',{ campgrounds } );
-});
+}));
 
 app.get('/campgrounds/new' ,(req,res ) => {
     res.render('campgrounds/new');
 })
 
-app.post('/campgrounds' ,async(req,res ) => {
+app.post('/campgrounds' ,catchAsync(async(req, res , next ) => {
+ 
     const campground = new Campground(req.body.campground);
     await campground.save();
     res.redirect(`/campgrounds/${campground._id}`);
-});
+
+}));
 
 // Route for editing must come before the show route so '/campgrounds/:id/edit' is not
 // mistaken for an :id value by the show route.
@@ -76,17 +79,21 @@ app.get('/campgrounds/:id', async (req, res) => {
     }
 });
 
-app.put('/campgrounds/:id' ,async(req,res) =>{
+app.put('/campgrounds/:id' ,catchAsync(async(req,res) =>{
     const {id} = req.params;
     const campground = await Campground.findByIdAndUpdate(id, {...req.body.campground});
     res.redirect(`/campgrounds/${campground._id}`);
-});
+}));
 
-app.delete('/campgrounds/:id' ,async(req,res) =>{
+app.delete('/campgrounds/:id' ,catchAsync(async(req,res) =>{
     const {id} = req.params;
     await Campground.findByIdAndDelete(id);
     res.redirect('/campgrounds');
-});
+}));
+
+app.use((err, req,res, next) => {
+    res.send('something went wrong');
+})
 
 app.listen(3000, () => {
     console.log('Server on port 3000');
